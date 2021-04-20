@@ -13,6 +13,10 @@ namespace STRIALG_INTERNAL_SORT
 {
     public partial class Form1 : Form
     {
+        static int CurrentStart = 0;
+        static int CurrentEnd = 0;
+        static int CurrentBit = 0;
+
         const int GapSize = 3;
 
         public static Font NumberFont = new Font(FontFamily.GenericMonospace, 10, FontStyle.Regular, GraphicsUnit.Pixel);
@@ -28,40 +32,148 @@ namespace STRIALG_INTERNAL_SORT
         {
             InitializeComponent();
 
-            //Sorter.BeginSplit += (o, e) => Threader(HighLightBucket, e);
-            //Sorter.EndSplit += (o, e) => Threader(UnHighLightBucket, e);
+            Sorter.BeginSplit += (o, e) => Invoke(new EventHandler(HighLightBucket), o, e);
+            Sorter.EndSplit += (o, e) => Invoke(new EventHandler(UnHighLightBucket), o, e);
+
+            Sorter.LeftValidated += (o, e) => Invoke(new EventHandler(HighLightLeft), o, e);
+            Sorter.RightValidated += (o, e) => Invoke(new EventHandler(HighLightRight), o, e);
+
+            Sorter.LeftNotValidated += (o, e) => Invoke(new EventHandler(UnHighLightLeft), o, e);
+            Sorter.RightNotValidated += (o, e) => Invoke(new EventHandler(UnHighLightRight), o, e);
+
+            Sorter.BeginSwap += (o, e) => Invoke(new EventHandler(HighLightSwapped), o, e);
+            Sorter.EndSwap += (o, e) => Invoke(new EventHandler(UnHighLightSwapped), o, e);
 
             GenerateArrayStrip.Click += (ob, ev) => GenerateArray();
             DoSortStrip.Click += (ob, ev) => Sort();
         }
 
-        void Threader(Action<object> method, object ev)
-        {
-            var t = new Thread(new ParameterizedThreadStart(method));
-            t.Start(ev);
-            t.Join();
-        }
-
-        void HighLightBucket(object ev)
+        void HighLightBucket(object sender, EventArgs ev)
         {
             SplitEventArgs e = ev as SplitEventArgs;
-            for (int i = e.Start; i < e.End; i++)
+
+            CurrentStart = e.Start;
+            CurrentEnd = e.End;
+            CurrentBit = e.Rank;
+            UpdateArray();
+
+            for (int j = 0; j < 10; j++)
             {
-                var loc = ArrayImage[i].Location;
-                //Invoke(new Delegate(() => ArrayImage[i].Location = new Point(loc.X + 10, loc.Y)));
+                for (int i = e.Start; i < e.End; i++)
+                {
+                    var loc = ArrayImage[i].Location;
+                    ArrayImage[i].Location = new Point(loc.X + 3, loc.Y);
+                }
+                Thread.Sleep(40);
             }
-            Thread.Sleep(1000);
+            Thread.Sleep(50);
+            ArrayBox.Refresh();
         }
 
-        void UnHighLightBucket(object ev)
+        void UnHighLightBucket(object sender, EventArgs ev)
         {
             SplitEventArgs e = ev as SplitEventArgs;
-            for (int i = e.Start; i < e.End; i++)
+
+            UpdateArray();
+
+            for (int j = 0; j < 10; j++)
             {
-                var loc = ArrayImage[i].Location;
-                ArrayImage[i].Location = new Point(loc.X - 10, loc.Y);
+                for (int i = e.Start; i < e.End; i++)
+                {
+                    var loc = ArrayImage[i].Location;
+                    ArrayImage[i].Location = new Point(loc.X - 3, loc.Y);
+                }
+                Thread.Sleep(20);
             }
-            Thread.Sleep(1000);
+            Thread.Sleep(50);
+            ArrayBox.Refresh();
+        }
+
+        void HighLightLeft(object sender, EventArgs ev)
+        {
+            SplitEventArgs e = ev as SplitEventArgs;
+            if (e.CurrentLeft > e.Start)
+            {
+                ArrayImage[e.CurrentLeft - 1].BackColor = Color.White;
+                ArrayImage[e.CurrentLeft - 1].Refresh();
+            }
+            ArrayImage[e.CurrentLeft].BackColor = Color.Cyan;
+            ArrayImage[e.CurrentLeft].Refresh();
+            Thread.Sleep(400);
+        }
+
+        void HighLightRight(object sender, EventArgs ev)
+        {
+            SplitEventArgs e = ev as SplitEventArgs;
+            if (e.CurrentRight < e.End)
+            {
+                ArrayImage[e.CurrentRight].BackColor = Color.White;
+                ArrayImage[e.CurrentRight].Refresh();
+            }
+            ArrayImage[e.CurrentRight - 1].BackColor = Color.Cyan;
+            ArrayImage[e.CurrentRight - 1].Refresh();
+            Thread.Sleep(400);
+        }
+
+        void UnHighLightLeft(object sender, EventArgs ev)
+        {
+            SplitEventArgs e = ev as SplitEventArgs;
+            if (e.CurrentLeft > e.Start)
+            {
+                ArrayImage[e.CurrentLeft - 1].BackColor = Color.White;
+                ArrayImage[e.CurrentLeft - 1].Refresh();
+            }
+            ArrayImage[e.CurrentLeft].BackColor = Color.Yellow;
+            ArrayImage[e.CurrentLeft].Refresh();
+            Thread.Sleep(200);
+        }
+
+        void UnHighLightRight(object sender, EventArgs ev)
+        {
+            SplitEventArgs e = ev as SplitEventArgs;
+            if (e.CurrentRight < e.End)
+            {
+                ArrayImage[e.CurrentRight].BackColor = Color.White;
+                ArrayImage[e.CurrentRight].Refresh();
+            }
+            ArrayImage[e.CurrentRight - 1].BackColor = Color.Yellow;
+            ArrayImage[e.CurrentRight - 1].Refresh();
+            Thread.Sleep(200);
+        }
+        
+        void HighLightSwapped(object sender, EventArgs ev)
+        {
+            SwapEventArgs e = ev as SwapEventArgs;
+            for (int j = 0; j < 10; j++)
+            {
+                var first = ArrayImage[e.First].Location;
+                var last = ArrayImage[e.Last].Location;
+                ArrayImage[e.First].Location = new Point(first.X + 3, first.Y);
+                ArrayImage[e.Last].Location = new Point(last.X + 3, last.Y);
+                Thread.Sleep(50);
+            }
+            ArrayBox.Refresh();
+        }
+
+        void UnHighLightSwapped(object sender, EventArgs ev)
+        {
+            Thread.Sleep(100);
+            UpdateArray();
+            Thread.Sleep(100);
+
+            SwapEventArgs e = ev as SwapEventArgs;
+            for (int j = 0; j < 10; j++)
+            {
+                var first = ArrayImage[e.First].Location;
+                var last = ArrayImage[e.Last].Location;
+                ArrayImage[e.First].Location = new Point(first.X - 3, first.Y);
+                ArrayImage[e.Last].Location = new Point(last.X - 3, last.Y);
+                Thread.Sleep(20);
+            }
+            ArrayImage[e.First].BackColor = Color.Cyan;
+            ArrayImage[e.Last].BackColor = Color.Cyan;
+            Thread.Sleep(50);
+            ArrayBox.Refresh();
         }
 
         void GenerateArray()
@@ -83,7 +195,9 @@ namespace STRIALG_INTERNAL_SORT
                     item?.Dispose();
                 }
             }
-
+            CurrentStart = 0;
+            CurrentEnd = 0;
+            CurrentBit = -1;
             ArrayImage = new PictureBox[MainArray.Length];
             var size = CalculateSize();
 
@@ -101,12 +215,25 @@ namespace STRIALG_INTERNAL_SORT
             }
         }
 
-        void UpdateArray(int highlightedbit)
+        void UpdateArray()
         {
-            for (int i = 0; i < MainArray.Length; i++)
+            int i = 0;
+            for (; i < CurrentStart; i++)
             {
-                DrawNumber(ref ArrayImage[i], MainArray[i], highlightedbit);
+                DrawNumber(ref ArrayImage[i], MainArray[i], -1);
+                ArrayImage[i].BackColor = Color.White;
             }
+            for (; i < CurrentEnd; i++)
+            {
+                DrawNumber(ref ArrayImage[i], MainArray[i], CurrentBit);
+                ArrayImage[i].BackColor = Color.White;
+            }
+            for (; i < MainArray.Length; i++)
+            {
+                DrawNumber(ref ArrayImage[i], MainArray[i], -1);
+                ArrayImage[i].BackColor = Color.White;
+            }
+            Refresh();
         }
 
         Size CalculateSize()
@@ -156,7 +283,10 @@ namespace STRIALG_INTERNAL_SORT
         void Sort()
         {
             Sorter.Sort(ref MainArray);
-            UpdateArray(-1);
+
+            CurrentStart = CurrentEnd = 0;
+            CurrentBit = -1;
+            UpdateArray();
         }
     }
 

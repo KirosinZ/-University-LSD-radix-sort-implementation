@@ -91,19 +91,35 @@ namespace STRIALG_INTERNAL_SORT
             int left = start; int right = end;
             while (left < right)
             {
-                for (; left < right && input[left].BitAt(rank) == 0; left++)
+                for (;; left++)
                 {
-                    if (left < right && input[left].BitAt(rank) == 0) LeftValidated?.Invoke(this, new SplitEventArgs(start, end, left, right));
-                    else LeftNotValidated?.Invoke(this, new SplitEventArgs(start, end, left, right));
+                    if (left < right && input[left].BitAt(rank) == 0)
+                    {
+                        LeftValidated?.Invoke(this, new SplitEventArgs(start, end, left, right, rank));
+                        continue;
+                    }
+                    if (left < right)
+                    {
+                        LeftNotValidated?.Invoke(this, new SplitEventArgs(start, end, left, right, rank));
+                    }
+                    break;
                 }
-                for (; left < right && input[right - 1].BitAt(rank) == 1; right--)
+                for (;; right--)
                 {
-                    if (left < right && input[right - 1].BitAt(rank) == 1) RightValidated?.Invoke(this, new SplitEventArgs(start, end, left, right));
-                    else RightNotValidated?.Invoke(this, new SplitEventArgs(start, end, left, right));
+                    if (left < right && input[right - 1].BitAt(rank) == 1)
+                    {
+                        RightValidated?.Invoke(this, new SplitEventArgs(start, end, left, right, rank));
+                        continue;
+                    }
+                    if (left < right)
+                    {
+                        RightNotValidated?.Invoke(this, new SplitEventArgs(start, end, left, right, rank));
+                    }
+                    break;
                 }
                 if (left < right) Swap(ref input, left, right - 1);
             }
-            EndSplit?.Invoke(this, new SplitEventArgs(start, left, end));
+            EndSplit?.Invoke(this, new SplitEventArgs(start, end, rank));
             return left;
         }
 
@@ -113,25 +129,41 @@ namespace STRIALG_INTERNAL_SORT
             int left = start; int right = end;
             while (left < right)
             {
-                for (; left < right && input[left].BitAt(rank) == 1; left++)
+                for (;; left++)
                 {
-                    if (left < right && input[left].BitAt(rank) == 1) LeftValidated?.Invoke(this, new SplitEventArgs(start, end, left, right));
-                    else LeftNotValidated?.Invoke(this, new SplitEventArgs(start, end, left, right));
+                    if (left < right && input[left].BitAt(rank) == 1)
+                    {
+                        LeftValidated?.Invoke(this, new SplitEventArgs(start, end, left, right, rank));
+                        continue;
+                    }
+                    if (left < right)
+                    {
+                        LeftNotValidated?.Invoke(this, new SplitEventArgs(start, end, left, right, rank));
+                    }
+                    break;
                 }
-                for (; left < right && input[right - 1].BitAt(rank) == 0; right--)
+                for (;; right--)
                 {
-                    if (left < right && input[right - 1].BitAt(rank) == 0) RightValidated?.Invoke(this, new SplitEventArgs(start, end, left, right));
-                    else RightNotValidated?.Invoke(this, new SplitEventArgs(start, end, left, right));
+                    if (left < right && input[right - 1].BitAt(rank) == 0)
+                    {
+                        RightValidated?.Invoke(this, new SplitEventArgs(start, end, left, right, rank));
+                        continue;
+                    }
+                    if (left < right)
+                    {
+                        RightNotValidated?.Invoke(this, new SplitEventArgs(start, end, left, right, rank));
+                    }
+                    break;
                 }
                 if (left < right) Swap(ref input, left, right - 1);
             }
-            EndSplit?.Invoke(this, new SplitEventArgs(start, left, end));
+            EndSplit?.Invoke(this, new SplitEventArgs(start, end, rank));
             return left;
         }
 
         void InternalSort(ref int[] input, int start, int end, int rank)
         {
-            if (rank < 0 || start >= end) return;
+            if (rank < 0 || start >= end - 1) return;
 
             int split = Split(ref input, start, end, rank);
 
@@ -154,7 +186,7 @@ namespace STRIALG_INTERNAL_SORT
                 return;
             }
 
-            r = 31;
+            r = 30;
             for (; (buf & (1u << r)) == 0; r -= 1) ;
             InternalSort(ref input, 0, input.Length, r);
         }
